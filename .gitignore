@@ -11,3 +11,11 @@ package-lock.yml
 .venv/
 venv/
 env/
+
+# DuckDB database files
+*.duckdb
+*.duckdb.wal
+
+# Jupyter notebooks
+notebooks/
+.ipynb_checkpoints/

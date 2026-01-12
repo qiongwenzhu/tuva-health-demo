@@ -2,51 +2,96 @@
 
 # The Tuva Project Demo
 
-## 🧰 What does this project do?
+---
 
-This demo provides a quick and easy way to run the Tuva Project 
-Package in a dbt project with synthetic data for 1k patients loaded as dbt seeds.
+# Cancer Population Analysis
 
-To set up the Tuva Project with your own claims data or to better understand what the Tuva Project does, please review the ReadMe in [The Tuva Project](https://github.com/tuva-health/the_tuva_project) package for a detailed walkthrough and setup.
+## Methodology
 
-For information on the data models check out our [Docs](https://thetuvaproject.com/).
+### Defining "Cancer"
+Cancer patients were identified using ICD-10 diagnosis codes starting with "C" (C00-C96), which represent malignant neoplasms. This approach uses the standardized ICD-10 classification system where:
+- C00-C14: Head and Neck cancers
+- C15-C26: Digestive/GI cancers
+- C30-C39: Respiratory/Lung cancers
+- C40-C41: Bone cancers
+- C43-C44: Skin cancers
+- C50: Breast cancer
+- C51-C58: Female Reproductive cancers
+- C60-C63: Male Reproductive cancers
+- C64-C68: Urinary cancers
+- C69-C72: Eye/Brain/CNS cancers
+- C73: Thyroid cancer
+- C74-C75: Endocrine cancers
+- C76-C79: Secondary/Metastatic cancers
+- C81-C86: Lymphoma
+- C88-C96: Leukemia/Blood cancers
 
-## 🔌 Database Support
+### Data Ambiguities Handled
+- **Multiple Cancer Types per Patient**: A patient may have multiple cancer diagnoses. For patient-level analysis, the "primary" cancer type is determined by the earliest recorded diagnosis date.
+- **Care Setting Classification**: Used the Tuva Project's `service_category_1` field which standardizes care settings into: inpatient, outpatient, ancillary, office-based, and other.
 
-- BigQuery
-- Databricks (community supported)
-- DuckDB (community supported)
-- Redshift
-- Snowflake
-- Microsoft Fabric
+### Architecture
+```
+Staging:      stg_cancer_cohort           (identifies cancer patients from conditions)
+                     |
+Intermediate: int_cancer_patients_claims  (joins patients with all their medical claims)
+                     |
+Marts:        mart_cancer_cost_by_setting (cost breakdown by care setting)
+              mart_cancer_summary         (patient-level summary with segmentation)
+```
 
-## ✅ How to get started
+## Key Findings
 
-### Pre-requisites
-1. You have [dbt](https://www.getdbt.com/) installed and configured (i.e. connected to your data warehouse). If you have not installed dbt, [here](https://docs.getdbt.com/docs/get-started-dbt) are instructions for doing so.
-2. You have created a database for the output of this project to be written in your data warehouse.
+### Cancer Prevalence
+- **396 out of 1,000 patients** (39.6%) have at least one cancer diagnosis
+- Total paid amount for cancer patients: **$7.76M**
 
-### Getting Started
-Complete the following steps to configure the project to run in your environment.
+### Top Cancer Types by Patient Count
+| Cancer Type | Patients |
+|-------------|----------|
+| Skin | 197 |
+| Male Reproductive | 131 |
+| Breast | 73 |
+| Urinary | 54 |
+| Digestive/GI | 31 |
 
-1. [Clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) this repo to your local machine or environment.
-2. Update the `dbt_project.yml` file:
-   1. Add the dbt profile connected to your data warehouse.
-3. Run `dbt deps` to install the Tuva Project package. 
-4. Run `dbt build` to run the entire project with the built-in sample data.
+### Cost Drivers by Care Setting
+| Care Setting | % of Total Spend |
+|--------------|------------------|
+| Inpatient (acute) | 30.5% |
+| Lab (ancillary) | 9.1% |
+| Office-based visits | 8.7% |
+| Pharmacy (outpatient) | 8.6% |
+| Office-based other | 8.2% |
 
-## 🙋🏻‍♀️ **How is this project maintained and can I contribute?**
+**Key Insight**: Acute inpatient care accounts for nearly one-third of all cancer-related spending, representing the largest cost driver.
 
-### Project Maintenance
+### Patient Spend Segmentation
+| Spend Bucket | Patients | Avg Spend |
+|--------------|----------|-----------|
+| High Spend | 131 | $39,679 |
+| Medium Spend | 134 | $14,154 |
+| Low Spend | 131 | $5,093 |
 
-The Tuva Project team maintaining this project **only** maintains the latest version of the project. 
-We highly recommend you stay consistent with the latest version.
+## AI Usage Log
 
-### Contributions
+### Environment Setup
+- AI assisted with setting up the local dbt + DuckDB environment, including creating the `~/.dbt/profiles.yml` configuration file and troubleshooting package installation.
 
-Have an opinion on the mappings? Notice any bugs when installing and running the project?
-If so, we highly encourage and welcome feedback!  While we work on a formal process in Github, we can be easily reached on our Slack community.
+### Initial Data Exploration & Design
+- AI assisted with initial data exploration (inspecting seed files and sample rows) and helped decide the proper schemas and tables to use in the analysis.
 
-## 🤝 Community
+### Code Generation
+- **Macro Creation**: I asked the AI to create a reusable dbt macro (`macros/cancer_type.sql`) to centralize the CASE WHEN logic for mapping ICD-10 codes to cancer type categories. This avoids duplicating the bucketing logic across multiple models.
+- **Test Files**: I requested AI to create test YAML files (`staging.yml`, `intermediate.yml`) with appropriate data quality tests (not_null, unique, accepted_values).
 
-Join our growing community of healthcare data practitioners on [Slack](https://join.slack.com/t/thetuvaproject/shared_invite/zt-16iz61187-G522Mc2WGA2mHF57e0il0Q)!
+
+### Architecture Decisions (My Input)
+- **Intermediate Table Design**: I decided to keep the intermediate model (`int_cancer_patients_claims`) simple by not including the cancer_type column directly. Instead, the cancer_type information is joined from the staging model in the mart layer. This approach:
+  - Keeps the intermediate model focused on claims data
+  - Avoids claim duplication for patients with multiple cancer types
+  - Allows flexibility in how segmentation is applied at the mart level
+
+
+
+

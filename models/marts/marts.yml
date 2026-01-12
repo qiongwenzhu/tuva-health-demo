@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: mart_cancer_cost_by_setting
+    description: "Cost breakdown by care setting for cancer patients"
+    columns:
+      - name: care_setting
+        description: "Care setting category (inpatient, outpatient, ancillary, office-based, other)"
+        tests:
+          - not_null
+
+      - name: total_paid_amount
+        description: "Total paid amount for this care setting"
+        tests:
+          - not_null
+
+      - name: pct_of_total_spend
+        description: "Percentage of total cancer spend"
+        tests:
+          - not_null
+
+  - name: mart_cancer_summary
+    description: "Patient-level cancer summary with cost metrics and segmentation"
+    columns:
+      - name: person_id
+        description: "Unique patient identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: cancer_type
+        description: "Primary cancer type (first diagnosed)"
+        tests:
+          - not_null
+
+      - name: spend_bucket
+        description: "Patient spend category based on percentiles"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Low Spend'
+                  - 'Medium Spend'
+                  - 'High Spend'

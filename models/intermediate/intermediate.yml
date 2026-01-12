@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: int_cancer_patients_claims
+    description: "Intermediate model joining cancer patients with their medical claims for cost analysis"
+    columns:
+      - name: claim_id
+        description: "Unique claim identifier"
+        tests:
+          - not_null
+
+      - name: person_id
+        description: "Patient identifier"
+        tests:
+          - not_null
+
+      - name: paid_amount
+        description: "Amount paid for the claim"
+
+      - name: care_setting
+        description: "Care setting category (inpatient, outpatient, ancillary, office-based, other)"
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'inpatient'
+                  - 'outpatient'
+                  - 'ancillary'
+                  - 'office-based'
+                  - 'other'
+              config:
+                where: "care_setting is not null"

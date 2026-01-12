@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_cancer_cohort
+    description: "Staging model identifying patients with cancer diagnoses (ICD-10 codes starting with 'C')"
+    columns:
+      - name: person_id
+        description: "Unique patient identifier"
+        tests:
+          - not_null
+
+      - name: condition_id
+        description: "Unique condition/diagnosis identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: icd_code
+        description: "ICD-10 diagnosis code (C00-C96 for malignant neoplasms)"
+        tests:
+          - not_null
+
+      - name: cancer_type
+        description: "Cancer category based on ICD-10 code groupings"
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - 'Head and Neck'
+                - 'Digestive/GI'
+                - 'Respiratory/Lung'
+                - 'Bone'
+                - 'Skin'
+                - 'Breast'
+                - 'Female Reproductive'
+                - 'Male Reproductive'
+                - 'Urinary'
+                - 'Eye/Brain/CNS'
+                - 'Thyroid'
+                - 'Endocrine'
+                - 'Secondary/Metastatic'
+                - 'Lymphoma'
+                - 'Leukemia/Blood'
+                - 'Other'
